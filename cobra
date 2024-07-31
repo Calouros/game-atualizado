@@ -221,9 +221,7 @@ class Jogo:
         pontuacao = fonte.render(f'PONTOS: {pontos} - NÍVEL: {nivel}', True, (255, 255, 255))
         tela.blit(pontuacao, (2, 2))
 
-
 carregar_tela = pygame.USEREVENT
-pygame.time.set_timer(carregar_tela, velocidade)
 pygame.mixer.pre_init(44100, -16, 2, 512)
 
 jogo = Jogo()
