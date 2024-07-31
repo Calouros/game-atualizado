@@ -8,6 +8,8 @@ pygame.init()
 
 tamanho = 40
 numero = 20
+velocidade = 150  # Velocidade inicial em milissegundos
+nivel = 1
 
 fonte = pygame.font.SysFont('Boink Let', 30)
 fonte2 = pygame.font.SysFont('Arista', 60)
@@ -18,8 +20,6 @@ imagem_maca = pygame.image.load('maca.png').convert_alpha()
 
 menu_principal = True
 fimdejogo = False
-nivel = 1
-velocidade = 150  # Velocidade inicial
 
 class Cobra:
     def __init__(self):
@@ -99,7 +99,7 @@ class Cobra:
             self.rabo = self.rabo_cima
 
     def mover_cobra(self):
-        if self.novo_bloco == True:
+        if self.novo_bloco:
             copia_corpo = self.corpo[:]
             copia_corpo.insert(0, copia_corpo[0] + self.direcao)
             self.corpo = copia_corpo[:]
@@ -119,7 +119,6 @@ class Cobra:
         self.corpo = [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
         self.direcao = Vector2(0, 0)
 
-
 class Maca:
     def __init__(self):
         self.aleatorio()
@@ -132,7 +131,6 @@ class Maca:
         self.x = randint(0, numero - 1)
         self.y = randint(0, numero - 1)
         self.posicao = Vector2(self.x, self.y)
-
 
 class Jogo:
     def __init__(self):
@@ -149,6 +147,7 @@ class Jogo:
         self.grama()
         self.maca.desenhar_maca()
         self.cobra.desenhar_cobra()
+        self.mostrar_pontos()
 
     def colisao(self):
         global nivel, velocidade
@@ -168,25 +167,32 @@ class Jogo:
                 velocidade = 75  # Aumentar ainda mais a velocidade
                 pygame.time.set_timer(carregar_tela, velocidade)
 
-        for bloco in self.cobra.corpo[1:]:
-            if bloco == self.maca.posicao:
-                self.maca.aleatorio()
-
     def perdeu(self):
         if not 0 <= self.cobra.corpo[0].x < numero or not 0 <= self.cobra.corpo[0].y < numero:
-            self.cobra.reiniciar()
-            self.pontos = 0
-            nivel = 1
-            velocidade = 150  # Reiniciar a velocidade
-            pygame.time.set_timer(carregar_tela, velocidade)
+            self.exibir_game_over()
+            fimdejogo = True
 
         for bloco in self.cobra.corpo[1:]:
             if bloco == self.cobra.corpo[0]:
-                self.cobra.reiniciar()
-                self.pontos = 0
-                nivel = 1
-                velocidade = 150  # Reiniciar a velocidade
-                pygame.time.set_timer(carregar_tela, velocidade)
+                self.exibir_game_over()
+                fimdejogo = True
+
+    def exibir_game_over(self):
+        tela.fill((0, 0, 0))  # Limpar a tela com a cor preta
+        fimdejogo_texto = fonte2.render('GAME OVER', True, (255, 0, 0))
+        tela.blit(fimdejogo_texto, (tela.get_width() // 2 - fimdejogo_texto.get_width() // 2, tela.get_height() // 2 - fimdejogo_texto.get_height() // 2))
+        pygame.display.update()
+
+    def reiniciar_jogo(self):
+        global fimdejogo
+        fimdejogo = False
+        self.cobra.reiniciar()
+        self.maca.aleatorio()
+        self.pontos = 0
+        global nivel, velocidade
+        nivel = 1
+        velocidade = 150  # Reiniciar a velocidade
+        pygame.time.set_timer(carregar_tela, velocidade)
 
     def grama(self):
         cor_grama = (167, 209, 61)
@@ -207,7 +213,6 @@ class Jogo:
         pontuacao = fonte.render(f'PONTOS: {pontos} - NÍVEL: {nivel}', True, (255, 255, 255))
         tela.blit(pontuacao, (2, 2))
 
-
 carregar_tela = pygame.USEREVENT
 pygame.time.set_timer(carregar_tela, velocidade)
 pygame.mixer.pre_init(44100, -16, 2, 512)
@@ -220,7 +225,7 @@ while True:
             pygame.quit()
             exit()
 
-        if event.type == carregar_tela:
+        if event.type == carregar_tela and not fimdejogo:
             jogo.carregar()
 
         if event.type == KEYDOWN:
@@ -241,11 +246,10 @@ while True:
                     jogo.cobra.direcao = Vector2(1, 0)
 
             if event.key == K_r:
-                fimdejogo = False
-                jogo = Jogo()  # Reiniciar o jogo
+                jogo.reiniciar_jogo()
 
-    tela.fill((175, 215, 70))
-    jogo.desenhar_elementos()
-    jogo.mostrar_pontos()
-    relogio.tick(60)
-    pygame.display.flip()
+    if not fimdejogo:
+        tela.fill((175, 215, 70))
+        jogo.desenhar_elementos()
+        relogio.tick(60)
+        pygame.display.flip()
